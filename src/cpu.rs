@@ -53,3 +53,35 @@ impl CPU {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::CPU;
+
+    #[test]
+    fn test_0xa9_arg_non_zero() {
+        let mut cpu = CPU::new();
+        cpu.interpret(vec![0xa9, 0x04, 0x00]);
+        assert_eq!(cpu.pc, 3);
+        assert_eq!(cpu.a, 0x04);
+        assert_eq!(cpu.status, 0b0000_0000)
+    }
+
+    #[test]
+    fn test_0xa9_arg_zero() {
+        let mut cpu = CPU::new();
+        cpu.interpret(vec![0xa9, 0x00, 0x00]);
+        assert_eq!(cpu.pc, 3);
+        assert_eq!(cpu.a, 0x00);
+        assert_eq!(cpu.status, 0b0000_0010)
+    }
+
+    #[test]
+    fn test_0xa9_arg_negative() {
+        let mut cpu = CPU::new();
+        cpu.interpret(vec![0xa9, 0b1011_0010, 0x00]);
+        assert_eq!(cpu.pc, 3);
+        assert_eq!(cpu.a, 0b1011_0010);
+        assert_eq!(cpu.status, 0b1000_0000)
+    }
+}
