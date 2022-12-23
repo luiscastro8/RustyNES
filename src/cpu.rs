@@ -21,22 +21,27 @@ impl CPU {
 
     fn lda(&mut self, value: u8) {
         self.a = value;
-        self.update_zero_and_negative_flags();
+        self.update_zero_and_negative_flags(self.a);
     }
 
     fn tax(&mut self) {
         self.x = self.a;
-        self.update_zero_and_negative_flags();
+        self.update_zero_and_negative_flags(self.a);
     }
 
-    fn update_zero_and_negative_flags(&mut self) {
-        if self.a == 0 {
+    fn inx(&mut self) {
+        self.x = self.x.overflowing_add(1).0;
+        self.update_zero_and_negative_flags(self.x);
+    }
+
+    fn update_zero_and_negative_flags(&mut self, value: u8) {
+        if value == 0 {
             self.status |= 0b0000_0010;
         } else {
             self.status &= 0b1111_1101;
         }
 
-        if self.a & 0b1000_0000 == 0b1000_0000 {
+        if value & 0b1000_0000 == 0b1000_0000 {
             self.status |= 0b1000_0000;
         } else {
             self.status &= 0b0111_1111;
@@ -61,6 +66,7 @@ impl CPU {
                     self.lda(param);
                 }
                 0xaa => self.tax(),
+                0xe8 => self.inx(),
                 _ => todo!()
             }
         }
@@ -106,5 +112,24 @@ mod tests {
         assert_eq!(cpu.pc, 2);
         assert_eq!(cpu.x, 0x06);
         assert_eq!(cpu.status, 0b0000_0000);
+    }
+
+    #[test]
+    fn test_0xe8() {
+        let mut cpu = CPU::new();
+        cpu.x = 3;
+        cpu.interpret(vec![0xe8, 0x00]);
+        assert_eq!(cpu.pc, 2);
+        assert_eq!(cpu.x, 4);
+        assert_eq!(cpu.status, 0b0000_0000);
+    }
+
+    #[test]
+    fn test_0xe8_overflow() {
+        let mut cpu = CPU::new();
+        cpu.x = 0xff;
+        cpu.interpret(vec![0xe8, 0x00]);
+
+        assert_eq!(cpu.x, 0)
     }
 }
