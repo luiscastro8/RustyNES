@@ -19,6 +19,30 @@ impl CPU {
         }
     }
 
+    fn lda(&mut self, value: u8) {
+        self.a = value;
+        self.update_zero_and_negative_flags();
+    }
+
+    fn tax(&mut self) {
+        self.x = self.a;
+        self.update_zero_and_negative_flags();
+    }
+
+    fn update_zero_and_negative_flags(&mut self) {
+        if self.a == 0 {
+            self.status |= 0b0000_0010;
+        } else {
+            self.status &= 0b1111_1101;
+        }
+
+        if self.a & 0b1000_0000 == 0b1000_0000 {
+            self.status |= 0b1000_0000;
+        } else {
+            self.status &= 0b0111_1111;
+        }
+    }
+
     pub fn interpret(&mut self, program: Vec<u8>) {
         self.pc = 0;
 
@@ -34,35 +58,9 @@ impl CPU {
                 0xa9 => {
                     let param = program[self.pc as usize];
                     self.pc += 1;
-                    self.a = param;
-
-                    if self.a == 0 {
-                        self.status |= 0b0000_0010;
-                    } else {
-                        self.status &= 0b1111_1101;
-                    }
-
-                    if self.a & 0b1000_0000 == 0b1000_0000 {
-                        self.status |= 0b1000_0000;
-                    } else {
-                        self.status &= 0b0111_1111;
-                    }
+                    self.lda(param);
                 }
-                0xaa => {
-                    self.x = self.a;
-
-                    if self.a == 0 {
-                        self.status |= 0b0000_0010;
-                    } else {
-                        self.status &= 0b1111_1101;
-                    }
-
-                    if self.a & 0b1000_0000 == 0b1000_0000 {
-                        self.status |= 0b1000_0000;
-                    } else {
-                        self.status &= 0b0111_1111;
-                    }
-                }
+                0xaa => self.tax(),
                 _ => todo!()
             }
         }
